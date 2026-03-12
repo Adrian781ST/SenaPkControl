@@ -8,7 +8,13 @@ const db = {
     { IdRol: 2, NombreRol: 'Operario' },
     { IdRol: 3, NombreRol: 'Usuario' }
   ],
-  Usuario: [],
+  // Nota: Las contraseñas están en texto plano para pruebas en Vercel
+  // En producción usa una base de datos real con hash
+  Usuario: [
+    { IdUsuario: 1, IdRol: 1, NombreCompleto: 'Admin', Documento: '1000000', Correo: 'admin2@test.com', Telefono: '3000000000', Contrasena: 'admin123' },
+    { IdUsuario: 2, IdRol: 2, NombreCompleto: 'Operario Test', Documento: '55555', Correo: 'operario@test.com', Telefono: '3001111111', Contrasena: 'operario123' },
+    { IdUsuario: 3, IdRol: 3, NombreCompleto: 'Aprendiz Test', Documento: '66666', Correo: 'aprendiz@test.com', Telefono: '3002222222', Contrasena: 'aprendiz123' }
+  ],
   Vehiculo: [],
   Movimiento: [],
   Notificacion: [],

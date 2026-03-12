@@ -26,7 +26,17 @@ const authController = {
       const { correo, contrasena } = req.body;
       const user = await User.findByEmail(correo);
       if (!user) return res.status(400).json({ message: 'Credenciales inválidas' });
-      const ok = await bcrypt.compare(contrasena, user.Contrasena);
+      
+      // Aceptar contraseña en texto plano O hash bcrypt
+      let ok = false;
+      if (user.Contrasena.startsWith('$2')) {
+        // Es un hash bcrypt
+        ok = await bcrypt.compare(contrasena, user.Contrasena);
+      } else {
+        // Es texto plano
+        ok = (contrasena === user.Contrasena);
+      }
+      
       if (!ok) return res.status(400).json({ message: 'Credenciales inválidas' });
       const payload = { id: user.IdUsuario, idRol: user.IdRol, correo: user.Correo, nombre: user.NombreCompleto, idRolName: user.NombreRol };
       const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '8h' });

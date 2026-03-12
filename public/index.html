@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SENA ParkControl - Sistema de Gestión de Parqueaderos</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="home-container">
+        <!-- Hero Section -->
+        <header class="home-hero">
+            <div class="hero-content">
+                <h1 class="hero-title">🏛️ SENA ParkControl</h1>
+                <p class="hero-subtitle">Sistema Inteligente de Gestión de Parqueaderos</p>
+                <p class="hero-description">
+                    Controla el acceso de vehículos, gestiona usuarios y genera reportes 
+                    de forma eficiente y segura para tu centro de formación.
+                </p>
+                <div class="hero-buttons">
+                    <button class="btn btn-primary btn-large" onclick="showLogin()">Iniciar Sesión</button>
+                    <button class="btn btn-secondary btn-large" onclick="showRegister()">Registrarse</button>
+                </div>
+            </div>
+            <div class="hero-image">
+                <div class="placeholder-image">🚗 🏢 🔐</div>
+            </div>
+        </header>
+
+        <!-- Login Section -->
+        <section id="login-section" class="auth-section" style="display: none;">
+            <div class="auth-card">
+                <button class="back-btn" onclick="showHome()">← Volver</button>
+                <h2>Iniciar Sesión</h2>
+                <form id="login-form" onsubmit="handleLogin(event)">
+                    <input type="email" id="login-email" placeholder="Correo electrónico" required>
+                    <input type="password" id="login-password" placeholder="Contraseña" required>
+                    <button type="submit" class="btn btn-primary btn-large">Entrar</button>
+                </form>
+                <p id="login-error" class="error"></p>
+                <p style="text-align: center; margin-top: 15px;">
+                    <button onclick="showUsersModal()" style="background: none; border: none; color: var(--sena-green); cursor: pointer; text-decoration: underline;">👥 Ver usuarios de prueba</button>
+                </p>
+            </div>
+        </section>
+
+        <!-- Register Section -->
+        <section id="register-section" class="auth-section" style="display: none;">
+            <div class="auth-card">
+                <button class="back-btn" onclick="showHome()">← Volver</button>
+                <h2>Registrarse</h2>
+                <form id="register-form" onsubmit="handleRegister(event)">
+                    <input type="text" id="reg-name" placeholder="Nombre completo" required>
+                    <input type="text" id="reg-document" placeholder="Número de documento" required>
+                    <input type="email" id="reg-email" placeholder="Correo electrónico" required>
+                    <input type="text" id="reg-phone" placeholder="Teléfono">
+                    <input type="password" id="reg-password" placeholder="Contraseña" required>
+                    <select id="reg-role">
+                        <option value="3">Aprendiz</option>
+                        <option value="2">Instructor</option>
+                        <option value="1">Administrador</option>
+                    </select>
+                    <button type="submit" class="btn btn-primary btn-large">Registrarse</button>
+                </form>
+                <p id="register-error" class="error"></p>
+            </div>
+        </section>
+
+        <!-- Dashboard Section -->
+        <section id="dashboard-section" class="dashboard-section" style="display: none;">
+            <nav class="dashboard-nav">
+                <h2>🏛️ SENA ParkControl</h2>
+                <div class="nav-links" id="nav-links">
+                    <!-- Se genera dinámicamente según el rol -->
+                </div>
+                <div class="user-info">
+                    <span id="user-name">Usuario</span>
+                    <button class="btn btn-secondary" onclick="logout()">Cerrar Sesión</button>
+                </div>
+            </nav>
+
+            <!-- ==================== ADMIN/OPERARIO: Vehículos ==================== -->
+            <div id="vehicles-tab" class="tab-content" style="display: none;">
+                <h3>🚗 Gestión de Vehículos</h3>
+                <button class="btn btn-primary" onclick="showAddVehicleForm()">+ Agregar Vehículo</button>
+                <div id="add-vehicle-form" class="form-inline" style="display: none;">
+                    <input type="text" id="vehicle-plate" placeholder="Placa" required>
+                    <select id="vehicle-type">
+                        <option value="carro">🚗 Carro</option>
+                        <option value="moto">🏍️ Moto</option>
+                        <option value="bicicleta">🚲 Bicicleta</option>
+                    </select>
+                    <input type="text" id="vehicle-model" placeholder="Modelo">
+                    <input type="text" id="vehicle-color" placeholder="Color">
+                    <button class="btn btn-primary" onclick="addVehicle()">Guardar</button>
+                    <button class="btn btn-secondary" onclick="hideAddVehicleForm()">Cancelar</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Placa</th>
+                            <th>Tipo</th>
+                            <th>Modelo</th>
+                            <th>Color</th>
+                            <th>Propietario</th>
+                            <th>Rol</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="vehicles-list"></tbody>
+                </table>
+            </div>
+
+            <!-- ==================== ADMIN/OPERARIO: Movimientos ==================== -->
+            <div id="movements-tab" class="tab-content" style="display: none;">
+                <h3>📊 Control de Movimientos</h3>
+                <div class="movement-controls">
+                    <button class="btn btn-primary" onclick="registerEntry()">📥 Registrar Entrada</button>
+                    <button class="btn btn-primary" onclick="registerExit()">📤 Registrar Salida</button>
+                </div>
+                <div id="movement-form" class="form-inline" style="display: none;">
+                    <input type="text" id="movement-plate" placeholder="Placa del vehículo">
+                    <button class="btn btn-primary" onclick="confirmMovement()">Confirmar</button>
+                    <button class="btn btn-secondary" onclick="hideMovementForm()">Cancelar</button>
+                </div>
+                <h4>🚗 Vehículos Dentro</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Placa</th>
+                            <th>Tipo</th>
+                            <th>Hora de Entrada</th>
+                            <th>Tiempo</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inside-vehicles-list"></tbody>
+                </table>
+                <h4>📋 Historial</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Placa</th>
+                            <th>Entrada</th>
+                            <th>Salida</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="movements-list"></tbody>
+                </table>
+            </div>
+
+            <!-- ==================== ADMIN: Usuarios ==================== -->
+            <div id="users-tab" class="tab-content" style="display: none;">
+                <h3>👥 Gestión de Usuarios</h3>
+                <button class="btn btn-primary" onclick="showAddUserForm()">+ Agregar Usuario</button>
+                <div id="add-user-form" class="form-inline" style="display: none;">
+                    <input type="text" id="user-name-input" placeholder="Nombre completo" required>
+                    <input type="text" id="user-document-input" placeholder="Documento" required>
+                    <input type="email" id="user-email-input" placeholder="Correo" required>
+                    <input type="text" id="user-phone-input" placeholder="Teléfono">
+                    <input type="password" id="user-password-input" placeholder="Contraseña" required>
+                    <select id="user-role-input">
+                        <option value="1">Administrador</option>
+                        <option value="2">Instructor</option>
+                        <option value="3">Aprendiz</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="addUser()">Guardar</button>
+                    <button class="btn btn-secondary" onclick="hideAddUserForm()">Cancelar</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Documento</th>
+                            <th>Correo</th>
+                            <th>Teléfono</th>
+                            <th>Rol</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-list"></tbody>
+                </table>
+            </div>
+
+            <!-- ==================== ADMIN: Reportes ==================== -->
+            <div id="reports-tab" class="tab-content" style="display: none;">
+                <h3>📈 Reportes y Estadísticas</h3>
+                <div id="reports-list"></div>
+            </div>
+
+            <!-- ==================== APRENDIZ: Mis Vehículos ==================== -->
+            <div id="myvehicles-tab" class="tab-content" style="display: none;">
+                <h3>🚗 Mis Vehículos Registrados</h3>
+                <div id="add-my-vehicle-form" class="form-inline" style="display: none;">
+                    <input type="text" id="my-vehicle-plate" placeholder="Placa" required>
+                    <select id="my-vehicle-type">
+                        <option value="carro">🚗 Carro</option>
+                        <option value="moto">🏍️ Moto</option>
+                        <option value="bicicleta">🚲 Bicicleta</option>
+                    </select>
+                    <input type="text" id="my-vehicle-model" placeholder="Modelo">
+                    <input type="text" id="my-vehicle-color" placeholder="Color">
+                    <button class="btn btn-primary" onclick="addMyVehicle()">Agregar</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Placa</th>
+                            <th>Tipo</th>
+                            <th>Modelo</th>
+                            <th>Color</th>
+                        </tr>
+                    </thead>
+                    <tbody id="my-vehicles-list"></tbody>
+                </table>
+            </div>
+
+            <!-- ==================== APRENDIZ: Mi Historial ==================== -->
+            <div id="history-tab" class="tab-content" style="display: none;">
+                <h3>📋 Mi Historial de Ingresos</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Placa</th>
+                            <th>Entrada</th>
+                            <th>Salida</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="my-history-list"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="features-section">
+            <h2>✨ Características Principales</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">👤</div>
+                    <h3>Gestión de Usuarios</h3>
+                    <p>Administra diferentes tipos de usuarios: Aprendices, Instructores, Administradores y Vigilantes.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🚗</div>
+                    <h3>Control de Vehículos</h3>
+                    <p>Registro y seguimiento de vehículos autorizados para ingresar al parqueadero.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Reportes Detallados</h3>
+                    <p>Genera reportes por fechas, tipos de vehículos y accesos para análisis estadístico.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3>Seguridad</h3>
+                    <p>Autenticación segura por roles y registro de todos los movimientos en el sistema.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- How it works Section -->
+        <section class="how-it-works">
+            <h2>¿Cómo Funciona?</h2>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Registro</h3>
+                    <p>Los usuarios registran sus vehículos en el sistema</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Acceso</h3>
+                    <p>Los vigilantes controlan entrada/salida mediante la placa</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Monitoreo</h3>
+                    <p>Los administradores supervisan la actividad en tiempo real</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3>Reportes</h3>
+                    <p>Generación de informes para optimización del espacio</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="home-footer">
+            <h2>¿Listo para comenzar?</h2>
+            <p>Únete a nuestra comunidad y optimiza la gestión de tu parqueadero</p>
+            <div class="footer-buttons">
+                <button class="btn btn-primary btn-large" onclick="showLogin()">Ingresar al Sistema</button>
+            </div>
+            <div class="footer-info">
+                <p>© 2024 SENA ParkControl - Todos los derechos reservados</p>
+                <p class="footer-note">🏛️ Sistema desarrollado para centros de formación del SENA</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Users Modal -->
+    <div id="users-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-modal" onclick="hideUsersModal()">&times;</span>
+            <h2>👥 Usuarios de Prueba</h2>
+            <p style="margin-bottom: 15px; color: #666;">Copia los datos para iniciar sesión:</p>
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Contraseña</th>
+                        <th>Rol</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>admin2@test.com</td>
+                        <td><code>admin123</code></td>
+                        <td>Administrador</td>
+                        <td><button onclick="fillLogin('admin2@test.com', 'admin123')">Usar</button></td>
+                    </tr>
+                    <tr>
+                        <td>operario@test.com</td>
+                        <td><code>operario123</code></td>
+                        <td>Operario</td>
+                        <td><button onclick="fillLogin('operario@test.com', 'operario123')">Usar</button></td>
+                    </tr>
+                    <tr>
+                        <td>aprendiz@test.com</td>
+                        <td><code>aprendiz123</code></td>
+                        <td>Aprendiz</td>
+                        <td><button onclick="fillLogin('aprendiz@test.com', 'aprendiz123')">Usar</button></td>
+                    </tr>
+                </tbody>
+            </table>
+            <p style="margin-top: 15px; font-size: 0.9em; color: #888;">* También puedes registrar nuevos usuarios</p>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

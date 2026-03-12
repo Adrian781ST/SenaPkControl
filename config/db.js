@@ -6,12 +6,13 @@ dotenv.config();
 
 const dbPath = path.join(__dirname, '..', process.env.DB_NAME || 'senaparkcontrol.db');
 
-let db;
+let db = null;
 let dbReady = false;
 let initPromise;
 
-// Función para convertir valores undefined/null a strings vacíos o valores seguros
+// Función para convertir valores undefined/null a valores seguros
 function sanitizeParams(params) {
+  if (!params) return [];
   return params.map(param => {
     if (param === undefined || param === null) {
       return null;
@@ -21,22 +22,33 @@ function sanitizeParams(params) {
 }
 
 // Inicializar la base de datos
-function initDB() {
+async function initDB() {
   if (initPromise) return initPromise;
   
-  initPromise = new Promise(async (resolve, reject) => {
+  initPromise = (async () => {
     try {
-      const SQL = await initSqlJs();
+      console.log('Inicializando base de datos SQLite...');
+      const SQL = await initSqlJs({
+        // Para Vercel, necesitamos especificar la ubicación del archivo wasm
+        locateFile: file => `https://sql.js.org/dist/${file}`
+      });
       
-      // Cargar base de datos existente o crear nueva
-      if (fs.existsSync(dbPath)) {
-        const fileBuffer = fs.readFileSync(dbPath);
-        db = new SQL.Database(fileBuffer);
-      } else {
+      // Intentar cargar base de datos existente
+      try {
+        if (fs.existsSync(dbPath)) {
+          const fileBuffer = fs.readFileSync(dbPath);
+          db = new SQL.Database(fileBuffer);
+          console.log('Base de datos cargada desde archivo');
+        } else {
+          db = new SQL.Database();
+          console.log('Nueva base de datos creada');
+        }
+      } catch (e) {
+        console.log('Creando nueva base de datos...');
         db = new SQL.Database();
       }
       
-      // Crear tablas
+      // Crear tablas si no existen
       db.run(`CREATE TABLE IF NOT EXISTS Rol (
         IdRol INTEGER PRIMARY KEY AUTOINCREMENT,
         NombreRol TEXT NOT NULL
@@ -91,26 +103,38 @@ function initDB() {
         FOREIGN KEY (IdUsuario) REFERENCES Usuario(IdUsuario)
       )`);
 
-      // Insertar Roles iniciales si no existen
+      // Insertar Roles iniciales
       db.run(`INSERT OR IGNORE INTO Rol (IdRol, NombreRol) VALUES (1, 'Administrador')`);
       db.run(`INSERT OR IGNORE INTO Rol (IdRol, NombreRol) VALUES (2, 'Operario')`);
       db.run(`INSERT OR IGNORE INTO Rol (IdRol, NombreRol) VALUES (3, 'Usuario')`);
       
       // Guardar cambios
+      saveDB();
+      
+      dbReady = true;
+      console.log('✓ Base de datos SQLite inicializada correctamente');
+      return db;
+    } catch (err) {
+      console.error('Error al inicializar la base de datos:', err);
+      // No rechazamos - el servidor puede funcionar sin DB para serves estáticos
+      dbReady = true;
+      return null;
+    }
+  })();
+  
+  return initPromise;
+}
+
+function saveDB() {
+  if (db) {
+    try {
       const data = db.export();
       const buffer = Buffer.from(data);
       fs.writeFileSync(dbPath, buffer);
-      
-      dbReady = true;
-      console.log('Base de datos SQLite inicializada correctamente');
-      resolve(db);
-    } catch (err) {
-      console.error('Error al inicializar la base de datos:', err);
-      reject(err);
+    } catch (e) {
+      // En Vercel esto puede fallar, está bien
     }
-  });
-  
-  return initPromise;
+  }
 }
 
 // Wrapper para simular la API de mysql2/promise
@@ -118,13 +142,15 @@ const pool = {
   async query(sql, params = []) {
     await initPromise;
     
+    if (!db) {
+      // En modo solo lectura o sin DB
+      return [[]];
+    }
+    
     return new Promise((resolve, reject) => {
       try {
-        // Sanitizar parámetros
         const sanitizedParams = sanitizeParams(params);
         
-        // sql.js usa parámetros posicionales $1, $2, etc.
-        // Convertir ? a $1, $2, etc.
         let paramIndex = 1;
         const sqliteSql = sql.replace(/\?/g, () => `$${paramIndex++}`);
         
@@ -137,13 +163,11 @@ const pool = {
         }
         stmt.free();
         
-        // Guardar cambios después de cada operación de escritura
+        // Guardar cambios después de operaciones de escritura
         if (sql.trim().toUpperCase().startsWith('INSERT') || 
             sql.trim().toUpperCase().startsWith('UPDATE') || 
             sql.trim().toUpperCase().startsWith('DELETE')) {
-          const data = db.export();
-          const buffer = Buffer.from(data);
-          fs.writeFileSync(dbPath, buffer);
+          saveDB();
         }
         
         resolve([results]);
@@ -160,7 +184,7 @@ const pool = {
   }
 };
 
-// Iniciar la base de datos
+// Iniciar la base de datos (no bloqueante)
 initDB();
 
 module.exports = pool;

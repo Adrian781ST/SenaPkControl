@@ -27,12 +27,23 @@ app.use('/api/notificaciones', notiRoutes);
 app.use('/api/reportes', reporteRoutes);
 
 // health
-app.get('/', (req, res) => res.json({ ok: true, service: 'SENA ParkControl API' }));
+app.get('/api', (req, res) => res.json({ ok: true, service: 'SENA ParkControl API' }));
 
 // Redirigir raíz al frontend
-app.get('/index', (req, res) => {
+app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Para cualquier otra ruta, servir el index.html (SPA)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Configuración del puerto
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
+module.exports = app;

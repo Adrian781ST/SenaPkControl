@@ -51,11 +51,13 @@ const pool = {
           if (sql.includes('Usuario') && sql.includes('Rol')) {
             // JOIN Usuario con Rol
             const correo = p[0];
+            console.log('Query by email:', correo);
             if (correo) {
               results = db.Usuario.filter(u => u.Correo === correo).map(u => {
                 const rol = db.Rol.find(r => r.IdRol === u.IdRol);
                 return { ...u, NombreRol: rol ? rol.NombreRol : null };
               });
+              console.log('Results:', results);
             } else {
               results = db.Usuario.map(u => {
                 const rol = db.Rol.find(r => r.IdRol === u.IdRol);

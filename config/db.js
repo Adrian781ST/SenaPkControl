@@ -1,8 +1,8 @@
 // Base de datos simple en memoria para Vercel
 // Nota: Los datos se reinician en cada despliegue en Vercel
 
-// Datos en memoria
-const db = {
+// Datos en memoria - inicializar solo una vez
+let db = {
   Rol: [
     { IdRol: 1, NombreRol: 'Administrador' },
     { IdRol: 2, NombreRol: 'Operario' },
@@ -20,6 +20,8 @@ const db = {
   Notificacion: [],
   Reporte: []
 };
+
+console.log('Database initialized with users:', db.Usuario.length);
 
 // Funciones helper
 function getNextId(table) {

@@ -29,6 +29,9 @@ const authController = {
       
       // Aceptar contraseña en texto plano O hash bcrypt
       let ok = false;
+      if (!user.Contrasena) {
+        return res.status(400).json({ message: 'Usuario sin contraseña configurada' });
+      }
       if (user.Contrasena.startsWith('$2')) {
         // Es un hash bcrypt
         ok = await bcrypt.compare(contrasena, user.Contrasena);

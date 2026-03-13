@@ -33,6 +33,16 @@ app.get('/api', (req, res) => {
   res.json({ ok: true, service: 'SENA ParkControl API' });
 });
 
+// Test endpoint - list all users
+app.get('/api/test/users', (req, res) => {
+  const db = require('./config/db');
+  db.query('SELECT * FROM Usuario').then(([rows]) => {
+    res.json({ users: rows });
+  }).catch(err => {
+    res.status(500).json({ error: err.message });
+  });
+});
+
 // Servir archivos estáticos del frontend
 app.use(express.static(path.join(__dirname, 'public')));
 

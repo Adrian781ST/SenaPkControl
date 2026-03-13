@@ -24,7 +24,9 @@ const authController = {
   async login(req, res) {
     try {
       const { correo, contrasena } = req.body;
+      console.log('Login attempt:', correo);
       const user = await User.findByEmail(correo);
+      console.log('User found:', user);
       if (!user) return res.status(400).json({ message: 'Credenciales inválidas' });
       
       // Aceptar contraseña en texto plano O hash bcrypt
@@ -40,12 +42,13 @@ const authController = {
         ok = (contrasena === user.Contrasena);
       }
       
+      console.log('Password valid:', ok);
       if (!ok) return res.status(400).json({ message: 'Credenciales inválidas' });
       const payload = { id: user.IdUsuario, idRol: user.IdRol, correo: user.Correo, nombre: user.NombreCompleto, idRolName: user.NombreRol };
       const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '8h' });
       res.json({ token, user: payload });
     } catch (err) {
-      console.error(err);
+      console.error('Login error:', err);
       res.status(500).json({ message: 'Error en login' });
     }
   }
